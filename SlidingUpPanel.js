@@ -48,9 +48,14 @@ class SlidingUpPanel extends React.PureComponent {
     onDragEnd: PropTypes.func,
     onMomentumDragStart: PropTypes.func,
     onMomentumDragEnd: PropTypes.func,
+    onClose: PropTypes.func,
+    onBackdropTouchStart: PropTypes.func,
+    onBackdropTouchEnd: PropTypes.func,
     allowMomentum: PropTypes.bool,
     allowDragging: PropTypes.bool,
     showBackdrop: PropTypes.bool,
+    hideOnBackdropTap: PropTypes.bool,
+    stopFlickOnBackdropTap: PropTypes.bool,
     backdropOpacity: PropTypes.number,
     friction: PropTypes.number,
     containerStyle: ViewPropTypes.style,
@@ -71,9 +76,14 @@ class SlidingUpPanel extends React.PureComponent {
     onDragEnd: () => {},
     onMomentumDragStart: () => {},
     onMomentumDragEnd: () => {},
+    onBackdropTouchStart: () => {},
+    onBackdropTouchEnd: () => {},
+    onClose: () => {},
     allowMomentum: true,
     allowDragging: true,
     showBackdrop: true,
+    hideOnBackdropTap: true,
+    stopFlickOnBackdropTap: true,
     backdropOpacity: 0.75,
     friction: Constants.DEFAULT_FRICTION
   }
@@ -279,6 +289,7 @@ class SlidingUpPanel extends React.PureComponent {
     const isAtBottom = this._isAtBottom(value)
 
     if (isAtBottom) {
+      this.props.onClose()
       Keyboard.dismiss()
     }
 
@@ -383,7 +394,13 @@ class SlidingUpPanel extends React.PureComponent {
     }
 
     const {top, bottom} = this.props.draggableRange
-    const {backdropStyle} = this.props
+    const {
+      backdropStyle,
+      onBackdropTouchStart,
+      onBackdropTouchEnd,
+      stopFlickOnBackdropTap,
+      hideOnBackdropTap
+    } = this.props
 
     const backdropOpacity = this.props.animatedValue.interpolate({
       inputRange: [bottom, top],
@@ -396,8 +413,14 @@ class SlidingUpPanel extends React.PureComponent {
         key="backdrop"
         pointerEvents={this._backdropPointerEvents}
         ref={c => (this._backdrop = c)}
-        onTouchStart={() => this._flick.stop()}
-        onTouchEnd={() => this.hide()}
+        onTouchStart={() => {
+          if (onBackdropTouchStart) onBackdropTouchStart()
+          if (stopFlickOnBackdropTap) this._flick.stop()
+        }}
+        onTouchEnd={() => {
+          if (onBackdropTouchEnd) onBackdropTouchEnd()
+          if (hideOnBackdropTap) this.hide()
+        }}
         style={[styles.backdrop, backdropStyle, {opacity: backdropOpacity}]}
       />
     )
